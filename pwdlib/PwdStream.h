@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pwdconfig.h"
+
 namespace pwd
 {
 	

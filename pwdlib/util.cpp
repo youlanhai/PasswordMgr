@@ -1,5 +1,4 @@
-﻿#include "stdafx.h"
-#include "util.h"
+﻿#include "util.h"
 #include <cstdlib>
 
 namespace pwd
@@ -34,11 +33,13 @@ namespace pwd
     {
         if (n == 0)
         {
-            throw(std::invalid_argument("the num must not be 0!"));
+            //throw(std::invalid_argument("the num must not be 0!"));
+            return;
         }
         if (srcMust.empty() && srcDefault.empty())
         {
-            throw(std::invalid_argument("srcMust and srcDefault, at least one is not empty!"));
+            //throw(std::invalid_argument("srcMust and srcDefault, at least one is not empty!"));
+            return;
         }
 
         out.clear();
@@ -67,7 +68,8 @@ namespace pwd
     {
         if (n == 0)
         {
-            throw(std::invalid_argument("the num must not be 0!"));
+            //throw(std::invalid_argument("the num must not be 0!"));
+            return;
         }
 
         pwdstring source;
@@ -79,7 +81,8 @@ namespace pwd
 
         if (source.empty() && srcMust.empty())
         {
-            throw(std::invalid_argument("the type and srcMust, at least one must not be none!"));
+            //throw(std::invalid_argument("the type and srcMust, at least one must not be none!"));
+            return;
         }
 
         disorder(source);
@@ -90,7 +93,8 @@ namespace pwd
     {
         if (n == 0)
         {
-            throw(std::invalid_argument("the num must not be 0!"));
+            //throw(std::invalid_argument("the num must not be 0!"));
+            return;
         }
 
         pwdstring source;
@@ -122,7 +126,8 @@ namespace pwd
 
         if (source.empty() && srcMust.empty())
         {
-            throw(std::invalid_argument("the type and srcMust, at least one must not be none!"));
+            //throw(std::invalid_argument("the type and srcMust, at least one must not be none!"));
+            return;
         }
 
         source += srcMust;//source与srcMust同级。

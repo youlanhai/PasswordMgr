@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "PwdStream.h"
 
 namespace pwd
@@ -32,10 +31,16 @@ namespace pwd
 	void PwdStream::gets(void *dest, size_t len)
 	{
 		if (len > LimitSize)
-			throw(std::invalid_argument("the size is too large!"));
+        {
+            //throw(std::invalid_argument("the size is too large!"));
+            return;
+        }
 
 		if (stream_.size() - pos_ < len)
-			throw(std::runtime_error("does't has enough stream!"));
+        {
+            //throw(std::runtime_error("does't has enough stream!"));
+            return;
+        }
 
 		memcpy(dest, &stream_[pos_], len);
 		pos_ += len;
@@ -44,7 +49,10 @@ namespace pwd
 	void PwdStream::appends(const void *src, size_t len)
 	{
 		if (len > LimitSize)
-			throw(std::invalid_argument("the size is too large!"));
+        {
+            //throw(std::invalid_argument("the size is too large!"));
+            return;
+        }
 
 		if (stream_.size() - pos_ < len)
 			stream_.resize(pos_ + len + BasicSize);

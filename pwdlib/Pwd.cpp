@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "Pwd.h"
 
 namespace pwd

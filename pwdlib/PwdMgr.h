@@ -1,5 +1,6 @@
 #pragma once
 #include "Pwd.h"
+#include <map>
 
 namespace pwd
 {

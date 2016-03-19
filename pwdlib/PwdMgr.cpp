@@ -1,6 +1,6 @@
-#include "stdafx.h"
 #include "PwdMgr.h"
 #include <iostream>
+#include <cassert>
 
 namespace pwd
 {
@@ -17,7 +17,7 @@ namespace pwd
     static FILE* openFile(const std::wstring & fname, const std::wstring & mode)
     {
         FILE * pFile = NULL;
-        _wfopen_s(&pFile, fname.c_str(), mode.c_str());
+        //wfopen(&pFile, fname.c_str(), mode.c_str());
 
         return pFile;
     }
@@ -170,7 +170,10 @@ namespace pwd
 	{
 		PwdMap::iterator it = find(id);
 		if (it == pool_.end())
-			throw(std::runtime_error("the pwdid was not found!"));
+        {
+            //LOG_ERROR("the pwdid was not found!"));
+            return;
+        }
 
 		pool_.erase(it);
 	}
@@ -178,7 +181,10 @@ namespace pwd
 	{
 		PwdMap::iterator it = find(id);
 		if (it == pool_.end())
-			throw(std::runtime_error("the pwdid was not found!"));
+        {
+            //throw(std::runtime_error("the pwdid was not found!"));
+            return;
+        }
 
 		it->second = data;
 		it->second.id_ = id;//the id must not be changed.
@@ -194,7 +200,13 @@ namespace pwd
 	{
 		PwdMap::const_iterator it = find(id);
 		if (it == pool_.end())
-			throw(std::runtime_error("the pwdid was not found!"));
+        {
+            //throw(std::runtime_error("the pwdid was not found!"));
+
+            static Pwd pwd;
+            pwd.id_ = 0;
+            return pwd;
+        }
 
 		return it->second;
 	}
