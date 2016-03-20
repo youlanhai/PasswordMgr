@@ -130,8 +130,8 @@ namespace pwd
 
 	bool PwdMgr::save(PwdStream & stream) const
 	{
-		stream.saveStruct(MagicNum);
-		stream.saveStruct(PwdVersion);
+        stream.saveStruct<uint32_t>(MagicNum);
+        stream.saveStruct<uint32_t>(PwdVersion);
 		
         //reserve 16 bytes
         for (size_t i = 0; i < 16; ++i)
@@ -139,8 +139,8 @@ namespace pwd
             stream.append(0);
         }
 
-		stream.saveStruct(idCounter_);
-		stream.saveStruct(pool_.size());
+        stream.saveStruct<uint32_t>(idCounter_);
+        stream.saveStruct<uint32_t>(pool_.size());
 		
         PwdLoader *loader = createLoader(getVersion());
         if(!loader)
