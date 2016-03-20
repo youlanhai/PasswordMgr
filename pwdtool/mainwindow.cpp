@@ -11,6 +11,8 @@
 
 const std::wstring UserDataFile = L"pwd/pwd.dat";
 
+const int DataRoleIndex = Qt::UserRole + 1;
+
 namespace SearchType
 {
     const int Keyword = 0;
@@ -42,6 +44,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QStringList categoryTitles;
     categoryTitles << tr("id") << tr("keyword") << tr("name");
     ui->categoryView->setHeaderLabels(categoryTitles);
+
+    connect(ui->categoryView, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(onItemClicked(QTreeWidgetItem*,int)));
 }
 
 MainWindow::~MainWindow()
@@ -155,6 +159,7 @@ void MainWindow::on_actionOpen_triggered()
             item->setText(0, QString("%1").arg(info.id_));
             item->setText(1, QString::fromStdString(info.keyword_));
             item->setText(2, QString::fromStdString(info.name_));
+            item->setData(0, DataRoleIndex, info.id_);
             items.append(item);
         }
         ui->categoryView->addTopLevelItems(items);
@@ -179,4 +184,26 @@ void MainWindow::on_actionPwdDelete_triggered()
 void MainWindow::on_actionPwdModify_triggered()
 {
 
+}
+
+void MainWindow::onItemClicked(QTreeWidgetItem * item, int /*column*/)
+{
+    if(!checkModified())
+    {
+        return;
+    }
+
+    pwd::pwdid id = item->data(0, DataRoleIndex).toUInt();
+
+    const pwd::Pwd &info = doc_->getPwdMgr()->get(id);
+    viewPwdInfo(info);
+}
+
+void MainWindow::viewPwdInfo(const pwd::Pwd &info)
+{
+    ui->edtID->setText(QString("%1").arg(info.id_));
+    ui->edtKeyword->setText(QString::fromStdString(info.keyword_));
+    ui->edtName->setText(QString::fromStdString(info.name_));
+    ui->edtContent->setText(QString::fromStdString(info.desc_));
+    ui->edtPassword->setText(QString::fromStdString(info.pwd_));
 }

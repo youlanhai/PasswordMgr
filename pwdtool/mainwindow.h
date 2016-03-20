@@ -8,6 +8,12 @@ class MainWindow;
 }
 
 class Document;
+class QTreeWidgetItem;
+
+namespace pwd
+{
+    class Pwd;
+}
 
 class MainWindow : public QMainWindow
 {
@@ -38,7 +44,11 @@ private slots:
 
     void on_actionPwdModify_triggered();
 
+    void onItemClicked(QTreeWidgetItem * item, int column);
+
 private:
+    void viewPwdInfo(const pwd::Pwd &info);
+
     Ui::MainWindow *ui;
     Document*       doc_;
 };
