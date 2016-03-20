@@ -160,6 +160,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
    <addaction name="actionPwdNew"/>
    <addaction name="actionPwdModify"/>

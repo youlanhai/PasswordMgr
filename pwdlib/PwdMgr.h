@@ -14,8 +14,8 @@ namespace pwd
 
         void clear();
 
-        bool load(const std::wstring & fname);
-        bool save(const std::wstring & fname) const;
+        bool load(const std::string & fname);
+        bool save(const std::string & fname) const;
 
 		bool load(PwdStream & stream);
 		bool save(PwdStream & stream) const;
@@ -46,6 +46,6 @@ namespace pwd
 		PwdMap pool_;
 	};
 
-    size_t getVersion();
+    uint32_t getVersion();
 
 }

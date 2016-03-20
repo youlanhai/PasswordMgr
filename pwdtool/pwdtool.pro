@@ -8,8 +8,10 @@ TEMPLATE = app
 
 CONFIG(debug, debug|release){
 	TARGET = pwdtool-debug
+    DEFINES += DEBUG
 }else{
 	TARGET = pwdtool-release
+    DEFINES += NDEBUG
 }
 
 include(../pwdlib/pwdlib.pri)

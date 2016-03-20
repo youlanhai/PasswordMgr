@@ -6,6 +6,8 @@
 #include <QMessageBox>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <QFileDialog>
+#include <QApplication>
 
 const std::wstring UserDataFile = L"pwd/pwd.dat";
 
@@ -81,12 +83,36 @@ void MainWindow::on_cobSearch_activated(int index)
 
 void MainWindow::on_actionSave_triggered()
 {
+    if(doc_->getDataPath().isEmpty())
+    {
+        on_actionSaveAs_triggered();
+        return;
+    }
+
+    if(!doc_->save())
+    {
+        QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
+        return;
+    }
+
     doc_->setModified(false);
 }
 
 void MainWindow::on_actionSaveAs_triggered()
 {
+    QString path = QFileDialog::getSaveFileName(NULL, tr("Save"));
+    if(path.isEmpty())
+    {
+        return;
+    }
 
+    if(!doc_->saveAs(path))
+    {
+        QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
+        return;
+    }
+
+    doc_->setModified(false);
 }
 
 void MainWindow::on_actionQuit_triggered()
@@ -95,11 +121,44 @@ void MainWindow::on_actionQuit_triggered()
     {
         return;
     }
+
+    QApplication::quit();
 }
 
 void MainWindow::on_actionOpen_triggered()
 {
+    if(!checkModified())
+    {
+        return;
+    }
 
+    QString path = QFileDialog::getOpenFileName(NULL, tr("Open File"));
+    if(!path.isEmpty())
+    {
+        QApplication::instance()->processEvents();
+
+        if(!doc_->load(path))
+        {
+            QMessageBox::critical(NULL, tr("Error"), tr("Failed to open data."));
+            return;
+        }
+
+        ui->categoryView->clear();
+        QList<QTreeWidgetItem*> items;
+
+        pwd::PwdMgr &mgr = *(doc_->getPwdMgr());
+        for(const auto &pair : mgr)
+        {
+            const pwd::Pwd &info = pair.second;
+
+            QTreeWidgetItem *item = new QTreeWidgetItem();
+            item->setText(0, QString("%1").arg(info.id_));
+            item->setText(1, QString::fromStdString(info.keyword_));
+            item->setText(2, QString::fromStdString(info.name_));
+            items.append(item);
+        }
+        ui->categoryView->addTopLevelItems(items);
+    }
 }
 
 void MainWindow::on_actionPwdNew_triggered()

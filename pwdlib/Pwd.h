@@ -10,9 +10,6 @@ namespace pwd
 		Pwd();
 		~Pwd();
 
-		void load(PwdStream & stream);
-		void save(PwdStream & stream) const;
-
 		pwdid id_;
 		pwdstring keyword_;
 		pwdstring name_;
