@@ -8,7 +8,7 @@ class Document : public QObject
 {
     Q_OBJECT
 public:
-    explicit Document(QObject *parent = 0);
+    explicit Document(QWidget *widget, QObject *parent = 0);
     ~Document();
 
     bool load(const QString &path);
@@ -21,11 +21,13 @@ public:
     bool isModified() const { return modified_; }
     void setModified(bool modified);
 
+    void refreshTitle();
 signals:
 
 public slots:
 
 private:
+    QWidget*        widget_;
     bool            modified_;
 
     QString         dataPath_;

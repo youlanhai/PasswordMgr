@@ -26,8 +26,6 @@ public:
     bool checkModified();
 
 private slots:
-    void on_btnSearch_clicked();
-
     void on_cobSearch_activated(int index);
 
     void on_actionSave_triggered();
@@ -44,13 +42,19 @@ private slots:
 
     void on_actionPwdModify_triggered();
 
-    void onItemClicked(QTreeWidgetItem * item, int column);
+    void onCurrentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previos);
+
+    void doSearch();
+    void refreshCategoryView();
+    void onContentModified(const QString &text = QString());
 
 private:
     void viewPwdInfo(const pwd::Pwd &info);
 
     Ui::MainWindow *ui;
     Document*       doc_;
+    QString         defaultDataPath_;
+    bool            isSynchronized_;
 };
 
 #endif // MAINWINDOW_H

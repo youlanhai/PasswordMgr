@@ -35,6 +35,19 @@
        </layout>
       </item>
       <item>
+       <widget class="QPushButton" name="btnShowAll">
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>显示所有</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QTreeWidget" name="categoryView">
         <property name="columnCount">
          <number>3</number>
@@ -68,7 +81,11 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="edtID"/>
+       <widget class="QLineEdit" name="edtID">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QLabel" name="label">
@@ -143,7 +160,6 @@
      <string>编辑</string>
     </property>
     <addaction name="actionPwdNew"/>
-    <addaction name="actionPwdModify"/>
     <addaction name="actionPwdDelete"/>
    </widget>
    <addaction name="menuFile"/>
@@ -163,7 +179,6 @@
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
    <addaction name="actionPwdNew"/>
-   <addaction name="actionPwdModify"/>
    <addaction name="actionPwdDelete"/>
   </widget>
   <action name="actionSave">
@@ -209,14 +224,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+D</string>
-   </property>
-  </action>
-  <action name="actionPwdModify">
-   <property name="text">
-    <string>修改</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+M</string>
    </property>
   </action>
  </widget>

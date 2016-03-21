@@ -34,4 +34,5 @@ void pwdLog(int lvl, const char *format, ...)
     va_end(ap);
 
     printf("\n");
+    fflush(stdout);
 }
