@@ -49,6 +49,9 @@
       </item>
       <item>
        <widget class="QTreeWidget" name="categoryView">
+        <property name="contextMenuPolicy">
+         <enum>Qt::CustomContextMenu</enum>
+        </property>
         <property name="columnCount">
          <number>3</number>
         </property>

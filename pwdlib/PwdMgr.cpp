@@ -170,6 +170,7 @@ namespace pwd
 		temp.second.id_ = id; //modify the id
 		pool_.insert(temp);
 
+        PWD_LOG_INFO("Add new data [%u]'%s'", id, data.keyword_.c_str());
 		return id;
 	}
 
@@ -178,23 +179,25 @@ namespace pwd
 		PwdMap::iterator it = find(id);
 		if (it == pool_.end())
         {
-            PWD_LOG_ERROR("the pwdid was not found!");
+            PWD_LOG_ERROR("Delete failed, the pwdid [%u] was not found!", id);
             return;
         }
 
 		pool_.erase(it);
 	}
+
 	void PwdMgr::modify(pwdid id, const Pwd & data)
 	{
 		PwdMap::iterator it = find(id);
 		if (it == pool_.end())
         {
-            PWD_LOG_ERROR("the pwdid was not found!");
+            PWD_LOG_ERROR("Modify failed, the pwdid [%u] was not found!", id);
             return;
         }
 
 		it->second = data;
 		it->second.id_ = id;//the id must not be changed.
+        PWD_LOG_DEBUG("Modify [%u]'%s'", id, data.keyword_.c_str());
 	}
 
     bool PwdMgr::exist(pwdid id) const
@@ -208,7 +211,7 @@ namespace pwd
 		PwdMap::const_iterator it = find(id);
 		if (it == pool_.end())
         {
-            PWD_LOG_ERROR("the pwdid was not found!");
+            PWD_LOG_ERROR("the pwdid [%u] was not found!", id);
 
             static Pwd pwd;
             pwd.id_ = 0;

@@ -11,6 +11,8 @@
 #include <QApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QCloseEvent>
+#include <QMenu>
 
 const char *DefaultDataPath = ".config/pwd";
 const char *UserDataFile = "pwd.dat";
@@ -26,19 +28,13 @@ namespace SearchType
     const int Password = 4;
 }
 
-namespace EditMode
-{
-    const int None = -1;
-    const int Read = 0;
-    const int New = 1;
-    const int Edit = 2;
-}
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     doc_(new Document(this)),
-    isSynchronized_(false)
+    isSynchronized_(false),
+    currentPwdID_(0),
+    categoryMenu_(new QMenu(this))
 {
     ui->setupUi(this);
 
@@ -50,8 +46,13 @@ MainWindow::MainWindow(QWidget *parent) :
     categoryTitles << tr("id") << tr("keyword") << tr("name");
     ui->categoryView->setHeaderLabels(categoryTitles);
 
+    categoryMenu_->addAction(ui->actionPwdNew);
+    categoryMenu_->addAction(ui->actionPwdDelete);
+
     connect(ui->categoryView, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
             this, SLOT(onCurrentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
+    connect(ui->categoryView, SIGNAL(customContextMenuRequested(QPoint)),
+            this, SLOT(onContextMenuRequested(QPoint)));
 
     connect(ui->btnSearch, SIGNAL(clicked(bool)), this, SLOT(doSearch()));
     connect(ui->edtSearch, SIGNAL(returnPressed()), this, SLOT(doSearch()));
@@ -84,6 +85,17 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::closeEvent(QCloseEvent * event)
+{
+    if(!checkModified())
+    {
+        event->ignore();
+        return;
+    }
+
+    QMainWindow::closeEvent(event);
+}
+
 bool MainWindow::checkModified()
 {
     if(doc_->isModified())
@@ -100,7 +112,7 @@ bool MainWindow::checkModified()
         }
         else if(QMessageBox::Save == ret)
         {
-            //do save
+            on_actionSave_triggered();
         }
         else if(QMessageBox::Discard == ret)
         {
@@ -108,11 +120,6 @@ bool MainWindow::checkModified()
         }
     }
     return true;
-}
-
-void MainWindow::on_cobSearch_activated(int index)
-{
-
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -123,6 +130,7 @@ void MainWindow::on_actionSave_triggered()
         return;
     }
 
+    savePwdInfo();
     if(!doc_->save())
     {
         QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
@@ -138,6 +146,7 @@ void MainWindow::on_actionSaveAs_triggered()
         return;
     }
 
+    savePwdInfo();
     if(!doc_->saveAs(path))
     {
         QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
@@ -184,7 +193,7 @@ void MainWindow::on_actionPwdNew_triggered()
         return;
     }
 
-    doc_->setModified(true);
+    viewPwdInfo(pwd::Pwd());
 }
 
 void MainWindow::on_actionPwdDelete_triggered()
@@ -214,28 +223,35 @@ void MainWindow::on_actionPwdDelete_triggered()
     }
 }
 
-void MainWindow::on_actionPwdModify_triggered()
+void MainWindow::onCurrentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem * previos)
 {
-
-}
-
-void MainWindow::onCurrentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem * /*previos*/)
-{
-    if(!checkModified())
+    if(current == NULL)
     {
         return;
     }
 
-    if(current != nullptr)
+    pwd::pwdid id = current->data(0, DataRoleIndex).toUInt();
+    if(id == currentPwdID_)
     {
-        pwd::pwdid id = current->data(0, DataRoleIndex).toUInt();
-
-        const pwd::Pwd &info = doc_->getPwdMgr()->get(id);
-        viewPwdInfo(info);
+        return;
     }
-    else
+
+    if(!checkModified())
     {
-        viewPwdInfo(pwd::Pwd());
+        ui->categoryView->setCurrentItem(previos);
+        return;
+    }
+
+    const pwd::Pwd &info = doc_->getPwdMgr()->get(id);
+    viewPwdInfo(info);
+}
+
+void MainWindow::onContextMenuRequested(const QPoint &pt)
+{
+    if(ui->categoryView->currentItem() != NULL &&
+            !doc_->isModified())
+    {
+        categoryMenu_->exec(ui->categoryView->mapToGlobal(pt));
     }
 }
 
@@ -247,13 +263,7 @@ void MainWindow::refreshCategoryView()
     pwd::PwdMgr &mgr = *(doc_->getPwdMgr());
     for(const auto &pair : mgr)
     {
-        const pwd::Pwd &info = pair.second;
-
-        QTreeWidgetItem *item = new QTreeWidgetItem();
-        item->setText(0, QString::number(info.id_));
-        item->setText(1, QString::fromStdString(info.keyword_));
-        item->setText(2, QString::fromStdString(info.name_));
-        item->setData(0, DataRoleIndex, info.id_);
+        QTreeWidgetItem *item = createTreeItem(pair.second);
         items.append(item);
     }
     ui->categoryView->addTopLevelItems(items);
@@ -261,6 +271,7 @@ void MainWindow::refreshCategoryView()
 
 void MainWindow::viewPwdInfo(const pwd::Pwd &info)
 {
+    currentPwdID_ = info.id_;
     isSynchronized_ = true;
     ui->edtID->setText(QString::number(info.id_));
     ui->edtKeyword->setText(QString::fromStdString(info.keyword_));
@@ -268,6 +279,48 @@ void MainWindow::viewPwdInfo(const pwd::Pwd &info)
     ui->edtContent->setText(QString::fromStdString(info.desc_));
     ui->edtPassword->setText(QString::fromStdString(info.pwd_));
     isSynchronized_ = false;
+}
+
+void MainWindow::savePwdInfo()
+{
+    pwd::Pwd info;
+    info.id_ = currentPwdID_;
+    info.keyword_ = ui->edtKeyword->text().toStdString();
+    if(info.keyword_.empty())
+    {
+        QMessageBox::critical(NULL, tr("Error"), tr("The keyword must not be empty"));
+        return;
+    }
+
+    info.name_ = ui->edtName->text().toStdString();
+    info.pwd_ = ui->edtPassword->text().toStdString();
+    info.desc_ = ui->edtContent->toHtml().toStdString();
+
+    if(currentPwdID_ == 0)
+    {
+        currentPwdID_ = doc_->getPwdMgr()->add(info);
+        info.id_ = currentPwdID_;
+
+        ui->edtID->setText(QString::number(currentPwdID_));
+
+        QTreeWidgetItem *item = createTreeItem(info);
+        ui->categoryView->addTopLevelItem(item);
+    }
+    else
+    {
+        doc_->getPwdMgr()->modify(currentPwdID_, info);
+
+        QTreeWidgetItem *item = findTreeItem(currentPwdID_);
+        if(item == NULL)
+        {
+            QMessageBox::critical(NULL, tr("Error"), tr("The id[%1] was not found").arg(currentPwdID_));
+        }
+        else
+        {
+            item->setText(1, QString::fromStdString(info.keyword_));
+            item->setText(2, QString::fromStdString(info.name_));
+        }
+    }
 }
 
 void MainWindow::doSearch()
@@ -322,11 +375,7 @@ void MainWindow::doSearch()
     {
         const pwd::Pwd & info = pwdmgr.get(*it);
 
-        QTreeWidgetItem *item = new QTreeWidgetItem();
-        item->setText(0, QString::number(info.id_));
-        item->setText(1, QString::fromStdString(info.keyword_));
-        item->setText(2, QString::fromStdString(info.name_));
-        item->setData(0, DataRoleIndex, info.id_);
+        QTreeWidgetItem *item = createTreeItem(info);
         items.append(item);
     }
     ui->categoryView->addTopLevelItems(items);
@@ -338,4 +387,28 @@ void MainWindow::onContentModified(const QString & /*text*/)
     {
         doc_->setModified(true);
     }
+}
+
+QTreeWidgetItem* MainWindow::createTreeItem(const pwd::Pwd &info)
+{
+    QTreeWidgetItem *item = new QTreeWidgetItem();
+    item->setText(0, QString::number(info.id_));
+    item->setText(1, QString::fromStdString(info.keyword_));
+    item->setText(2, QString::fromStdString(info.name_));
+    item->setData(0, DataRoleIndex, info.id_);
+    return item;
+}
+
+QTreeWidgetItem* MainWindow::findTreeItem(pwd::pwdid id)
+{
+    int n = ui->categoryView->topLevelItemCount();
+    for(int i = 0; i < n; ++i)
+    {
+        QTreeWidgetItem *item = ui->categoryView->topLevelItem(i);
+        if(item->data(0, DataRoleIndex) == id)
+        {
+            return item;
+        }
+    }
+    return NULL;
 }
