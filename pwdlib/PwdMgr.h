@@ -36,14 +36,24 @@ namespace pwd
 
         inline PwdMap::const_iterator begin() const { return pool_.begin(); }
         inline PwdMap::const_iterator end() const { return pool_.end(); }
-	private:
-		inline pwdid allocateId(){ return idCounter_++;  }
-		inline PwdMap::iterator find(pwdid id){ return pool_.find(id); }
+
+        pwdid getIdCounter() const { return idCounter_; }
+        void setIdCounter(pwdid counter){ idCounter_ = counter; }
+
+        void insert(const Pwd &data);
+
+        void setEncryptKey(const std::string &key){ encryptKey_ = key; }
+        const std::string& getEncryptKey() const { return encryptKey_; }
+
+    private:
+        inline pwdid allocateId(){ return idCounter_++;  }
+        inline PwdMap::iterator find(pwdid id){ return pool_.find(id); }
 		inline PwdMap::const_iterator find(pwdid id) const { return pool_.find(id); }
 
 	private:
-		pwdid idCounter_;
-		PwdMap pool_;
+        pwdid       idCounter_;
+        PwdMap      pool_;
+        std::string encryptKey_;
 	};
 
     uint32_t getVersion();

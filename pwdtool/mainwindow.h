@@ -49,7 +49,7 @@ private slots:
 private:
     virtual void closeEvent(QCloseEvent * event) override;
     void viewPwdInfo(const pwd::Pwd &info);
-    void savePwdInfo();
+    bool savePwdInfo();
     QTreeWidgetItem* createTreeItem(const pwd::Pwd &info);
     QTreeWidgetItem* findTreeItem(pwd::pwdid id);
 

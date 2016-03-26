@@ -19,7 +19,7 @@ Document::~Document()
 
 void Document::setModified(bool modified)
 {
-    if(modified == modified_)
+    if(modified_ == modified)
     {
         return;
     }
@@ -44,11 +44,11 @@ void Document::refreshTitle()
 
 bool Document::load(const QString &path)
 {
+    dataPath_ = path;
+    refreshTitle();
+
     if(pwdmgr_->load(path.toStdString()))
     {
-        dataPath_ = path;
-        refreshTitle();
-
         PWD_LOG_INFO("Load data file '%s'", path.toUtf8().data());
         return true;
     }
@@ -74,5 +74,8 @@ bool Document::save()
 bool Document::saveAs(const QString &path)
 {
     dataPath_ = path;
-    return save();
+
+    bool ret = save();
+    refreshTitle();
+    return ret;
 }

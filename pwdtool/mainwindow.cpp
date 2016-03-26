@@ -13,6 +13,7 @@
 #include <QFileInfo>
 #include <QCloseEvent>
 #include <QMenu>
+#include <openssl/ssl.h>
 
 const char *DefaultDataPath = ".config/pwd";
 const char *UserDataFile = "pwd.dat";
@@ -83,6 +84,9 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+
+    //消除openssl链接错误
+    OPENSSL_cleanse(0, 0);
 }
 
 void MainWindow::closeEvent(QCloseEvent * event)
@@ -130,7 +134,14 @@ void MainWindow::on_actionSave_triggered()
         return;
     }
 
-    savePwdInfo();
+    if(doc_->isModified())
+    {
+        if(!savePwdInfo())
+        {
+            return;
+        }
+    }
+
     if(!doc_->save())
     {
         QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
@@ -146,7 +157,11 @@ void MainWindow::on_actionSaveAs_triggered()
         return;
     }
 
-    savePwdInfo();
+    if(doc_->isModified())
+    {
+        savePwdInfo();
+    }
+
     if(!doc_->saveAs(path))
     {
         QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
@@ -174,6 +189,9 @@ void MainWindow::on_actionOpen_triggered()
     QString path = QFileDialog::getOpenFileName(NULL, tr("Open File"), defaultDataPath_);
     if(!path.isEmpty())
     {
+        ui->categoryView->clear();
+        viewPwdInfo(pwd::Pwd());
+
         QApplication::instance()->processEvents();
 
         if(!doc_->load(path))
@@ -281,7 +299,7 @@ void MainWindow::viewPwdInfo(const pwd::Pwd &info)
     isSynchronized_ = false;
 }
 
-void MainWindow::savePwdInfo()
+bool MainWindow::savePwdInfo()
 {
     pwd::Pwd info;
     info.id_ = currentPwdID_;
@@ -289,7 +307,7 @@ void MainWindow::savePwdInfo()
     if(info.keyword_.empty())
     {
         QMessageBox::critical(NULL, tr("Error"), tr("The keyword must not be empty"));
-        return;
+        return false;
     }
 
     info.name_ = ui->edtName->text().toStdString();
@@ -321,6 +339,7 @@ void MainWindow::savePwdInfo()
             item->setText(2, QString::fromStdString(info.name_));
         }
     }
+    return true;
 }
 
 void MainWindow::doSearch()

@@ -8,7 +8,7 @@
 namespace pwd
 {
     const uint32_t MagicNum = 'x' | 'p' << 8 | 'w' << 16 | 'd' << 24;
-    const uint32_t PwdVersion = 1;
+    const uint32_t PwdVersion = 2;
 
     
     uint32_t getVersion()
@@ -66,9 +66,9 @@ namespace pwd
 
 	PwdMgr::PwdMgr()
 		: idCounter_(10000)
-	{
+        , encryptKey_("12345678")
+    {
 	}
-
 
 	PwdMgr::~PwdMgr()
 	{
@@ -94,12 +94,6 @@ namespace pwd
             return false;
         }
 
-        stream.skip(16); //reserve 16 bytes
-        if (stream.empty())
-        {
-            return false;
-        }
-
         PwdLoader *loader = createLoader(version);
         if(loader == nullptr)
         {
@@ -107,41 +101,17 @@ namespace pwd
             return false;
         }
 
-		stream.loadStruct(idCounter_);
-
-        uint32_t len;
-		stream.loadStruct(len);
-
-		Pwd data;
-        bool ok = true;
-		for (size_t i = 0; i < len; ++i)
-		{
-            if(!loader->load(data, stream))
-            {
-                ok = false;
-                break;
-            }
-			pool_[data.id_] = data;
-		}
+        bool ret = loader->load(*this, stream);
         delete loader;
 
-        return ok;
+        return ret;
 	}
 
 	bool PwdMgr::save(PwdStream & stream) const
 	{
         stream.saveStruct<uint32_t>(MagicNum);
         stream.saveStruct<uint32_t>(PwdVersion);
-		
-        //reserve 16 bytes
-        for (size_t i = 0; i < 16; ++i)
-        {
-            stream.append(0);
-        }
 
-        stream.saveStruct<uint32_t>(idCounter_);
-        stream.saveStruct<uint32_t>(pool_.size());
-		
         PwdLoader *loader = createLoader(getVersion());
         if(!loader)
         {
@@ -149,17 +119,10 @@ namespace pwd
             return false;
         }
 
-        bool ok = true;
-		for (PwdMap::const_iterator it = pool_.begin(); it != pool_.end(); ++it)
-		{
-            if(!loader->save(it->second, stream))
-            {
-                ok = false;
-                break;
-            }
-		}
+        bool ret = loader->save(*this, stream);
         delete loader;
-        return ok;
+
+        return ret;
 	}
 
 	pwdid PwdMgr::add(const Pwd & data)
@@ -173,6 +136,12 @@ namespace pwd
         PWD_LOG_INFO("Add new data [%u]'%s'", id, data.keyword_.c_str());
 		return id;
 	}
+
+    void PwdMgr::insert(const Pwd &data)
+    {
+        assert(data.id_ != 0 && !exist(data.id_));
+        pool_[data.id_] = data;
+    }
 
 	void PwdMgr::del(pwdid id)
 	{
@@ -291,10 +260,7 @@ namespace pwd
             return false;
         }
 
-        pwd::streambuffer & buffer = stream.steam();
-        size_t len = buffer.size();
-
-        if (fwrite(buffer.data(), len, 1, pFile) != 1)
+        if (fwrite(stream.begin(), stream.offset(), 1, pFile) != 1)
         {
             PWD_LOG_ERROR("write file failed!");
             fclose(pFile);

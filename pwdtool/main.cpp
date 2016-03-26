@@ -2,8 +2,12 @@
 #include <QApplication>
 #include "mainwindow.h"
 
+#include "../pwdlib/util.h"
+
 int main(int argc, char **argv)
 {
+    pwd::test_util();
+
     // create the application instance
     QApplication app(argc, argv);
 

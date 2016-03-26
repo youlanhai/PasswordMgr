@@ -4,10 +4,10 @@
 
 namespace pwd
 {
-    const pwdstring LetterS = L"abcdefghijklmnopqrstuvwxyz";
-    const pwdstring LetterB = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const pwdstring Digit = L"0123456789";
-    const pwdstring Special = L"!@#$%^&*_";
+    const pwdstring LetterS = "abcdefghijklmnopqrstuvwxyz";
+    const pwdstring LetterB = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const pwdstring Digit = "0123456789";
+    const pwdstring Special = "!@#$%^&*_";
 
     enum ChType
     {
@@ -35,5 +35,15 @@ namespace pwd
 
     //根据类型，有约束的生成n位密码，保证每种类型至少存在一个字符。
     void genPwdByTypeStrict(pwdstring & out, size_t n, ChType type, const pwdstring & srcMust = EmptyStr);
+
+
+    typedef std::basic_string<int16_t> utf16;
+    bool utf16_to_utf8(std::string &output, const utf16 &input);
+
+
+    bool encryptData(streambuffer &inoutBuffer, const std::string &password);
+    bool decryptData(streambuffer &inoutBuffer, const std::string &password);
+
+    void test_util();
 
 }//end namespace pwd

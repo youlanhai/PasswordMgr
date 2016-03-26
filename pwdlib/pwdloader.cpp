@@ -1,46 +1,19 @@
 #include "pwdloader.h"
 #include "Pwd.h"
 #include "PwdStream.h"
+#include "PwdMgr.h"
+#include "pwdlog.h"
+#include "util.h"
 
+#include <cassert>
 #include <iconv.h>
 
 #define PWD_RETURN_FALSE(RET) if(!(RET)) return false
 
+
 namespace pwd
 {
-    typedef std::basic_string<int16_t> utf16;
-    bool utf16_to_utf8(std::string &output, const utf16 &input)
-    {
-        if(input.empty())
-        {
-            output.clear();
-            return true;
-        }
-
-        char *pInput = (char*)input.c_str();
-        size_t inputLeft = input.size() * sizeof(utf16::value_type);
-
-        size_t outputLeft = input.size() * 4;
-        output.resize(outputLeft);
-        char *pOutput = (char*)output.data();
-
-        iconv_t cd = iconv_open("utf-8", "utf-16le");
-        if(cd == iconv_t(-1))
-        {
-            return false;
-        }
-
-        if(iconv(cd, &pInput, &inputLeft, &pOutput, &outputLeft) == size_t(-1))
-        {
-            output.clear();
-            iconv_close(cd);
-            return false;
-        }
-
-        output.resize(output.size() - outputLeft);
-        iconv_close(cd);
-        return true;
-    }
+    static const uint32_t EncryptMagic = 193578324;
 
     bool read_utf16(utf16 &output, PwdStream &stream)
     {
@@ -69,8 +42,55 @@ namespace pwd
 
     }
 
+    bool PwdLoader::load(PwdMgr &mgr, PwdStream &stream)
+    {
+        stream.skip(16); //reserve 16 bytes
+        if (stream.empty())
+        {
+            return false;
+        }
 
-    bool PwdLoaderV0::load(Pwd &info, PwdStream &stream)
+        pwdid idCounter;
+        stream.loadStruct<uint32_t>(idCounter);
+        mgr.setIdCounter(idCounter);
+
+        uint32_t len;
+        stream.loadStruct<uint32_t>(len);
+
+        Pwd data;
+        for (uint32_t i = 0; i < len; ++i)
+        {
+            if(!loadPwd(data, stream))
+            {
+                return false;
+            }
+            mgr.insert(data);
+        }
+        return true;
+    }
+
+    bool PwdLoader::save(const PwdMgr &mgr, PwdStream &stream)
+    {
+        //reserve 16 bytes
+        for (size_t i = 0; i < 16; ++i)
+        {
+            stream.append(0);
+        }
+
+        stream.saveStruct<uint32_t>(mgr.getIdCounter());
+        stream.saveStruct<uint32_t>(mgr.count());
+
+        for (const auto &pair : mgr)
+        {
+            if(!savePwd(pair.second, stream))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool PwdLoaderV0::loadPwd(Pwd &info, PwdStream &stream)
     {
         PWD_RETURN_FALSE(stream.loadStruct<uint32_t>(info.id_));
 
@@ -87,13 +107,13 @@ namespace pwd
         return true;
     }
 
-    bool PwdLoaderV0::save(const Pwd &info, PwdStream &stream)
+    bool PwdLoaderV0::savePwd(const Pwd & /*info*/, PwdStream & /*stream*/)
     {
         return false;
     }
 
 
-    bool PwdLoaderV1::load(Pwd &info, PwdStream &stream)
+    bool PwdLoaderV1::loadPwd(Pwd &info, PwdStream &stream)
     {
         PWD_RETURN_FALSE(stream.loadStruct<uint32_t>(info.id_));
         PWD_RETURN_FALSE(stream.loadString(info.keyword_));
@@ -103,13 +123,115 @@ namespace pwd
         return true;
     }
 
-    bool PwdLoaderV1::save(const Pwd &info, PwdStream &stream)
+    bool PwdLoaderV1::savePwd(const Pwd &info, PwdStream &stream)
     {
         stream.saveStruct<uint32_t>(info.id_);
         stream.saveString(info.keyword_);
         stream.saveString(info.name_);
         stream.saveString(info.pwd_);
         stream.saveString(info.desc_);
+        return true;
+    }
+
+    PwdLoaderV2::PwdLoaderV2(bool enableEncrypt)
+        : enableEncrypt_(enableEncrypt)
+    {
+
+    }
+
+    bool PwdLoaderV2::load(PwdMgr &mgr, PwdStream &stream)
+    {
+        // read the header
+        size_t headerLength = stream.loadStruct<uint16_t>();
+        bool isEncrypt = stream.read() != 0;
+        size_t dataLength = stream.loadStruct<uint32_t>();
+
+        stream.skip(headerLength - (2 + 1 + 4));
+        if (stream.remain() < dataLength)
+        {
+            PWD_LOG_ERROR("Invalid data length.");
+            return false;
+        }
+
+        PwdStream ss;
+        streambuffer &buffer = ss.steam();
+        buffer.resize(dataLength);
+        if(!stream.read(buffer.data(), dataLength))
+        {
+            return false;
+        }
+        assert(stream.empty());
+
+        if(isEncrypt && !decryptData(buffer, mgr.getEncryptKey()))
+        {
+            PWD_LOG_ERROR("Failed to init password key.");
+            return false;
+        }
+
+        uint32_t magic = ss.loadStruct<uint32_t>();
+        if(magic != EncryptMagic)
+        {
+            PWD_LOG_ERROR("Failed to decrypt data.");
+            return false;
+        }
+
+        pwdid idCounter = ss.loadStruct<uint32_t>();
+        mgr.setIdCounter(idCounter);
+
+        uint32_t len = ss.loadStruct<uint32_t>();
+
+        Pwd data;
+        for (uint32_t i = 0; i < len; ++i)
+        {
+            if(!loadPwd(data, ss))
+            {
+                PWD_LOG_ERROR("Failed to load password info at index %d", (int)i);
+                return false;
+            }
+            mgr.insert(data);
+        }
+        return true;
+    }
+
+    bool PwdLoaderV2::save(const PwdMgr &mgr, PwdStream &stream)
+    {
+        // collect raw data.
+        PwdStream ss;
+        ss.saveStruct<uint32_t>(EncryptMagic);
+        ss.saveStruct<uint32_t>(mgr.getIdCounter());
+        ss.saveStruct<uint32_t>(mgr.count());
+        for (const auto &pair : mgr)
+        {
+            if(!savePwd(pair.second, ss))
+            {
+                return false;
+            }
+        }
+
+        if(enableEncrypt_)
+        {
+            streambuffer &buffer = ss.steam();
+            buffer.resize(ss.offset());
+
+            if(!encryptData(buffer, mgr.getEncryptKey()))
+            {
+                PWD_LOG_ERROR("Failed to encrypt data.");
+                return false;
+            }
+        }
+
+        // write header
+        size_t headerLength = 16;
+        stream.saveStruct<uint16_t>(headerLength);
+        stream.saveStruct<uchar>(enableEncrypt_);
+        stream.saveStruct<uint32_t>(ss.offset());
+        for(size_t i = 2 + 1 + 4; i < headerLength; ++i)
+        {
+            stream.append(0);
+        }
+
+        // write data
+        stream.append(ss.begin(), ss.offset());
         return true;
     }
 
@@ -123,6 +245,10 @@ namespace pwd
         {
             return new PwdLoaderV1();
         }
-        return NULL;
+        else if(version == 2)
+        {
+            return new PwdLoaderV2(true);
+        }
+        return nullptr;
     }
 }

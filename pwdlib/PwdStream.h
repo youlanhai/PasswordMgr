@@ -20,6 +20,8 @@ namespace pwd
 
         bool empty() const { return pos_ >= stream_.size(); }
 
+        const uchar* begin() const { return stream_.data(); }
+        size_t offset() const { return pos_; }
         size_t remain() const { return stream_.size() - pos_; }
 		
         streambuffer & steam(){ return stream_; }

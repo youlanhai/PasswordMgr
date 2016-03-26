@@ -1,5 +1,9 @@
 ﻿#include "util.h"
 #include <cstdlib>
+#include <cassert>
+
+#include <iconv.h>
+#include <openssl/aes.h>
 
 namespace pwd
 {
@@ -145,5 +149,105 @@ namespace pwd
         {
             out = source;
         }
+    }
+
+    bool utf16_to_utf8(std::string &output, const utf16 &input)
+    {
+        if(input.empty())
+        {
+            output.clear();
+            return true;
+        }
+
+        char *pInput = (char*)input.c_str();
+        size_t inputLeft = input.size() * sizeof(utf16::value_type);
+
+        size_t outputLeft = input.size() * 4;
+        output.resize(outputLeft);
+        char *pOutput = (char*)output.data();
+
+        iconv_t cd = iconv_open("utf-8", "utf-16le");
+        if(cd == iconv_t(-1))
+        {
+            return false;
+        }
+
+        if(iconv(cd, &pInput, &inputLeft, &pOutput, &outputLeft) == size_t(-1))
+        {
+            output.clear();
+            iconv_close(cd);
+            return false;
+        }
+
+        output.resize(output.size() - outputLeft);
+        iconv_close(cd);
+        return true;
+    }
+
+    static const uchar EncryptVector[AES_BLOCK_SIZE] = {1, 2, 54, 32, 65, 235, 92, 43, 87, 4, 65, 12, 76, 34, 20, 84};
+
+    static size_t alignSize(size_t size, size_t align)
+    {
+        assert(align > 0);
+        return size_t((size + align - 1) / align) * align;
+    }
+
+    bool encryptData(streambuffer &inoutBuffer, const std::string &password)
+    {
+        std::string alignedPwd = password;
+        alignedPwd.resize(16);
+
+        AES_KEY key;
+        if(AES_set_encrypt_key((const uchar*)alignedPwd.c_str(), 128, &key) < 0)
+        {
+            return false;
+        }
+
+        uchar iv[AES_BLOCK_SIZE];
+        memcpy(iv, EncryptVector, sizeof(EncryptVector));
+
+        size_t alignedSize = alignSize(inoutBuffer.size(), AES_BLOCK_SIZE);
+        streambuffer temp(alignedSize);
+        AES_cbc_encrypt(inoutBuffer.data(), temp.data(), inoutBuffer.size(), &key, iv, AES_ENCRYPT);
+        temp.resize(inoutBuffer.size());
+
+        inoutBuffer.swap(temp);
+        return true;
+    }
+
+    bool decryptData(streambuffer &inoutBuffer, const std::string &password)
+    {
+        std::string alignedPwd = password;
+        alignedPwd.resize(16);
+
+        AES_KEY key;
+        if(AES_set_decrypt_key((const uchar*)alignedPwd.c_str(), 128, &key) < 0)
+        {
+            return false;
+        }
+
+        uchar iv[AES_BLOCK_SIZE];
+        memcpy(iv, EncryptVector, sizeof(EncryptVector));
+
+        size_t alignedSize = alignSize(inoutBuffer.size(), AES_BLOCK_SIZE);
+        streambuffer temp(alignedSize);
+        AES_cbc_encrypt(inoutBuffer.data(), temp.data(), inoutBuffer.size(), &key, iv, AES_DECRYPT);
+        temp.resize(inoutBuffer.size());
+
+        inoutBuffer.swap(temp);
+        return true;
+    }
+
+    void test_util()
+    {
+        streambuffer buffer = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f'};
+        std::string password = "0123456789abcdefg";
+
+        streambuffer temp = buffer;
+        assert(temp == buffer);
+
+        encryptData(temp, password);
+        decryptData(temp, password);
+        assert(temp == buffer);
     }
 }
