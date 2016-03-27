@@ -18,12 +18,18 @@ include(../pwdlib/pwdlib.pri)
 
 HEADERS += \
     mainwindow.h \
-    document.h
+    document.h \
+    pwdsettingdialog.h \
+    pwdinputdialog.h
 
 SOURCES += \
     mainwindow.cpp \
     main.cpp \
-    document.cpp
+    document.cpp \
+    pwdsettingdialog.cpp \
+    pwdinputdialog.cpp
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    pwdsettingdialog.ui \
+    pwdinputdialog.ui

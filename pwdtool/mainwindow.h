@@ -46,6 +46,8 @@ private slots:
     void refreshCategoryView();
     void onContentModified(const QString &text = QString());
 
+    void on_actionChangePassword_triggered();
+
 private:
     virtual void closeEvent(QCloseEvent * event) override;
 

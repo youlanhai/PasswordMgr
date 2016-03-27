@@ -44,15 +44,25 @@ void Document::refreshTitle()
 
 pwd::LoaderError Document::load(const QString &path)
 {
-    dataPath_ = path;
-    refreshTitle();
+    dataPath_.clear();
 
-    return pwdmgr_->load(path.toStdString());
+    pwd::LoaderError ret = pwdmgr_->load(path.toStdString());
+    if(ret == pwd::LoaderError::NoError)
+    {
+        dataPath_ = path;
+    }
+
+    refreshTitle();
+    return ret;
 }
 
 pwd::LoaderError Document::save(const QString &path)
 {
-    dataPath_ = path;
-    refreshTitle();
-    return pwdmgr_->save(dataPath_.toStdString());
+    pwd::LoaderError ret = pwdmgr_->save(path.toStdString());
+    if(ret == pwd::LoaderError::NoError)
+    {
+        dataPath_ = path;
+        setModified(false);
+    }
+    return ret;
 }

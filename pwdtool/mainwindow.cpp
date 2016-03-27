@@ -1,6 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "document.h"
+#include "pwdsettingdialog.h"
+#include "pwdinputdialog.h"
+
 #include "../pwdlib/Pwd.h"
 #include "../pwdlib/pwdlog.h"
 
@@ -150,6 +153,17 @@ void MainWindow::on_actionSaveAs_triggered()
 
 void MainWindow::doSave(const QString &path)
 {
+    if(doc_->getPwdMgr()->getEncryptKey().empty())
+    {
+        PwdSettingDialog dialog("");
+        if(QDialog::Accepted != dialog.exec())
+        {
+            return;
+        }
+
+        doc_->getPwdMgr()->setEncryptKey(dialog.getNewPassword());
+    }
+
     if(doc_->isModified())
     {
         savePwdInfo();
@@ -158,7 +172,7 @@ void MainWindow::doSave(const QString &path)
     pwd::LoaderError ret = doc_->save(path);
     if(ret != pwd::LoaderError::NoError)
     {
-        QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
+        QMessageBox::critical(NULL, tr("Error"), tr("Failed to save (%1).").arg((int)ret));
         return;
     }
 }
@@ -183,15 +197,29 @@ void MainWindow::on_actionOpen_triggered()
     QString path = QFileDialog::getOpenFileName(NULL, tr("Open File"), defaultDataPath_);
     if(!path.isEmpty())
     {
+        // clear current data
         ui->categoryView->clear();
         viewPwdInfo(pwd::Pwd());
+        doc_->getPwdMgr()->setEncryptKey("");
 
         QApplication::instance()->processEvents();
 
         pwd::LoaderError ret = doc_->load(path);
+        if(ret == pwd::LoaderError::EmptyPassword)
+        {
+            PwdInputDialog dialog;
+            if(QDialog::Accepted != dialog.exec())
+            {
+                return;
+            }
+
+            doc_->getPwdMgr()->setEncryptKey(dialog.getPassword());
+            ret = doc_->load(path);
+        }
+
         if(ret != pwd::LoaderError::NoError)
         {
-            QMessageBox::critical(NULL, tr("Error"), tr("Failed to open data."));
+            QMessageBox::critical(NULL, tr("Error"), tr("Failed to open data %1.").arg((int)ret));
             return;
         }
 
@@ -425,4 +453,14 @@ QTreeWidgetItem* MainWindow::findTreeItem(pwd::pwdid id)
         }
     }
     return NULL;
+}
+
+void MainWindow::on_actionChangePassword_triggered()
+{
+    PwdSettingDialog dialog(doc_->getPwdMgr()->getEncryptKey());
+    if(QDialog::Accepted == dialog.exec())
+    {
+        doc_->getPwdMgr()->setEncryptKey(dialog.getNewPassword());
+        doc_->setModified(true);
+    }
 }

@@ -66,7 +66,6 @@ namespace pwd
 
 	PwdMgr::PwdMgr()
 		: idCounter_(10000)
-        , encryptKey_("12345678")
     {
 	}
 
