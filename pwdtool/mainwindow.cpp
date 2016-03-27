@@ -134,19 +134,7 @@ void MainWindow::on_actionSave_triggered()
         return;
     }
 
-    if(doc_->isModified())
-    {
-        if(!savePwdInfo())
-        {
-            return;
-        }
-    }
-
-    if(!doc_->save())
-    {
-        QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
-        return;
-    }
+    doSave(doc_->getDataPath());
 }
 
 void MainWindow::on_actionSaveAs_triggered()
@@ -157,12 +145,18 @@ void MainWindow::on_actionSaveAs_triggered()
         return;
     }
 
+    doSave(path);
+}
+
+void MainWindow::doSave(const QString &path)
+{
     if(doc_->isModified())
     {
         savePwdInfo();
     }
 
-    if(!doc_->saveAs(path))
+    pwd::LoaderError ret = doc_->save(path);
+    if(ret != pwd::LoaderError::NoError)
     {
         QMessageBox::critical(NULL, tr("Error"), tr("Failed to save."));
         return;
@@ -194,7 +188,8 @@ void MainWindow::on_actionOpen_triggered()
 
         QApplication::instance()->processEvents();
 
-        if(!doc_->load(path))
+        pwd::LoaderError ret = doc_->load(path);
+        if(ret != pwd::LoaderError::NoError)
         {
             QMessageBox::critical(NULL, tr("Error"), tr("Failed to open data."));
             return;
@@ -235,7 +230,7 @@ void MainWindow::on_actionPwdDelete_triggered()
     if(QMessageBox::question(NULL, tr("Confirm"), text) == QMessageBox::Yes)
     {
         doc_->getPwdMgr()->del(id);
-        doc_->save();
+        doc_->setModified(true);
 
         delete item;
     }

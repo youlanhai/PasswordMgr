@@ -3,7 +3,6 @@
 #include "../Pwd.h"
 #include "../PwdStream.h"
 #include "../PwdMgr.h"
-#include "../pwdlog.h"
 #include <cassert>
 
 namespace pwd
@@ -17,7 +16,7 @@ namespace pwd
 
     }
 
-    bool PwdLoaderV2::load(PwdMgr &mgr, PwdStream &stream)
+    LoaderError PwdLoaderV2::load(PwdMgr &mgr, PwdStream &stream)
     {
         // read the header
         size_t headerLength = stream.loadStruct<uint16_t>();
@@ -27,8 +26,12 @@ namespace pwd
         stream.skip(headerLength - (2 + 1 + 4));
         if (stream.remain() < dataLength)
         {
-            PWD_LOG_ERROR("Invalid data length.");
-            return false;
+            return LoaderError::InvalidData;
+        }
+
+        if(isEncrypt && mgr.getEncryptKey().empty())
+        {
+            return LoaderError::EmptyPassword;
         }
 
         PwdStream ss;
@@ -36,21 +39,19 @@ namespace pwd
         buffer.resize(dataLength);
         if(!stream.read(buffer.data(), dataLength))
         {
-            return false;
+            return LoaderError::InvalidData;
         }
         assert(stream.empty());
 
         if(isEncrypt && !decryptData(buffer, mgr.getEncryptKey()))
         {
-            PWD_LOG_ERROR("Failed to init password key.");
-            return false;
+            return LoaderError::InvalidData;
         }
 
         uint32_t magic = ss.loadStruct<uint32_t>();
         if(magic != EncryptMagic)
         {
-            PWD_LOG_ERROR("Failed to decrypt data.");
-            return false;
+            return LoaderError::InvalidPassword;
         }
 
         pwdid idCounter = ss.loadStruct<uint32_t>();
@@ -61,17 +62,17 @@ namespace pwd
         Pwd data;
         for (uint32_t i = 0; i < len; ++i)
         {
-            if(!loadPwd(data, ss))
+            LoaderError ret = loadPwd(data, ss);
+            if(ret != LoaderError::NoError)
             {
-                PWD_LOG_ERROR("Failed to load password info at index %d", (int)i);
-                return false;
+                return ret;
             }
             mgr.insert(data);
         }
-        return true;
+        return LoaderError::NoError;
     }
 
-    bool PwdLoaderV2::save(const PwdMgr &mgr, PwdStream &stream)
+    LoaderError PwdLoaderV2::save(const PwdMgr &mgr, PwdStream &stream)
     {
         // collect raw data.
         PwdStream ss;
@@ -80,21 +81,26 @@ namespace pwd
         ss.saveStruct<uint32_t>(mgr.count());
         for (const auto &pair : mgr)
         {
-            if(!savePwd(pair.second, ss))
+            LoaderError ret = savePwd(pair.second, ss);
+            if(ret != LoaderError::NoError)
             {
-                return false;
+                return ret;
             }
         }
 
         if(enableEncrypt_)
         {
+            if(mgr.getEncryptKey().empty())
+            {
+                return LoaderError::EmptyPassword;
+            }
+
             streambuffer &buffer = ss.steam();
             buffer.resize(ss.offset());
 
             if(!encryptData(buffer, mgr.getEncryptKey()))
             {
-                PWD_LOG_ERROR("Failed to encrypt data.");
-                return false;
+                return LoaderError::FailedEncrypt;
             }
         }
 
@@ -110,7 +116,7 @@ namespace pwd
 
         // write data
         stream.append(ss.begin(), ss.offset());
-        return true;
+        return LoaderError::NoError;
     }
 
 }

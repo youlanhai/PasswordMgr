@@ -14,11 +14,11 @@ namespace pwd
 
         void clear();
 
-        bool load(const std::string & fname);
-        bool save(const std::string & fname) const;
+        LoaderError load(const std::string & fname);
+        LoaderError save(const std::string & fname) const;
 
-		bool load(PwdStream & stream);
-		bool save(PwdStream & stream) const;
+        LoaderError load(PwdStream & stream);
+        LoaderError save(PwdStream & stream) const;
 
 		//add one password data. and return the id of the data.
 		pwdid add(const Pwd & data);

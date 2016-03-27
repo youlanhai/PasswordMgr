@@ -80,7 +80,70 @@ namespace pwd
         idCounter_ = 10000;
     }
 
-	bool PwdMgr::load(PwdStream & stream)
+    LoaderError PwdMgr::load(const std::string & fname)
+    {
+        FILE* pFile = fopen(fname.c_str(), "rb");
+        if (!pFile)
+        {
+            PWD_LOG_ERROR("open file %s failed!", fname.c_str());
+            return LoaderError::FailedOpenFile;
+        }
+
+        pwd::PwdStream stream;
+        pwd::streambuffer & buffer = stream.steam();
+
+        long len = flength(pFile);
+        buffer.resize(len);
+        if (len <= 0 || fread(&buffer[0], len, 1, pFile) != 1)
+        {
+            PWD_LOG_ERROR("read file %s failed!", fname.c_str());
+            fclose(pFile);
+            return LoaderError::FailedReadFile;
+        }
+        fclose(pFile);
+
+        LoaderError ret = load(stream);
+        if (ret != LoaderError::NoError)
+        {
+            PWD_LOG_ERROR("load stream failed!");
+            return ret;
+        }
+
+        PWD_LOG_DEBUG("succed load pwd data %s", fname.c_str());
+        return LoaderError::NoError;
+    }
+
+    LoaderError PwdMgr::save(const std::string & fname) const
+    {
+        FILE* pFile = fopen(fname.c_str(), "wb");
+        if (!pFile)
+        {
+            PWD_LOG_ERROR("open file %s failed!", fname.c_str());
+            return LoaderError::FailedOpenFile;
+        }
+
+        pwd::PwdStream stream;
+        LoaderError ret = save(stream);
+        if (ret != LoaderError::NoError)
+        {
+            PWD_LOG_ERROR("save stream failed!");
+            fclose(pFile);
+            return ret;
+        }
+
+        if (fwrite(stream.begin(), stream.offset(), 1, pFile) != 1)
+        {
+            PWD_LOG_ERROR("write file failed!");
+            fclose(pFile);
+            return LoaderError::FailedWriteFile;
+        }
+        fclose(pFile);
+
+        PWD_LOG_DEBUG("succed save pwd data %s", fname.c_str());
+        return LoaderError::NoError;
+    }
+
+    LoaderError PwdMgr::load(PwdStream & stream)
 	{
         clear();
 
@@ -91,23 +154,23 @@ namespace pwd
         if (magic != MagicNum)
         {
             PWD_LOG_ERROR("Invalid data format.");
-            return false;
+            return LoaderError::InvalidData;
         }
 
         PwdLoader *loader = createLoader(version);
         if(loader == nullptr)
         {
             PWD_LOG_ERROR("Unsupported file version '%u'", version);
-            return false;
+            return LoaderError::UnsupportedVersion;
         }
 
-        bool ret = loader->load(*this, stream);
+        LoaderError ret = loader->load(*this, stream);
         delete loader;
 
         return ret;
 	}
 
-	bool PwdMgr::save(PwdStream & stream) const
+    LoaderError PwdMgr::save(PwdStream & stream) const
 	{
         stream.saveStruct<uint32_t>(MagicNum);
         stream.saveStruct<uint32_t>(PwdVersion);
@@ -116,10 +179,10 @@ namespace pwd
         if(!loader)
         {
             PWD_LOG_ERROR("Unsupported file version '%u'", getVersion());
-            return false;
+            return LoaderError::UnsupportedVersion;
         }
 
-        bool ret = loader->save(*this, stream);
+        LoaderError ret = loader->save(*this, stream);
         delete loader;
 
         return ret;
@@ -209,67 +272,4 @@ namespace pwd
 	{
 		PWD_SEARCH_BY(ids, desc_, desc)
 	}
-
-    
-    bool PwdMgr::load(const std::string & fname)
-    {
-        FILE* pFile = fopen(fname.c_str(), "rb");
-        if (!pFile)
-        {
-            PWD_LOG_ERROR("open file %s failed!", fname.c_str());
-            return false;
-        }
-
-        pwd::PwdStream stream;
-        pwd::streambuffer & buffer = stream.steam();
-
-        long len = flength(pFile);
-        buffer.resize(len);
-        if (len <= 0 || fread(&buffer[0], len, 1, pFile) != 1)
-        {
-            PWD_LOG_ERROR("read file %s failed!", fname.c_str());
-            fclose(pFile);
-            return false;
-        }
-        fclose(pFile);
-
-        if (!load(stream))
-        {
-            PWD_LOG_ERROR("load stream failed!");
-            return false;
-        }
-
-        PWD_LOG_DEBUG("succed load pwd data %s", fname.c_str());
-        return true;
-    }
-
-    bool PwdMgr::save(const std::string & fname) const
-    {
-        FILE* pFile = fopen(fname.c_str(), "wb");
-        if (!pFile)
-        {
-            PWD_LOG_ERROR("open file %s failed!", fname.c_str());
-            return false;
-        }
-
-        pwd::PwdStream stream;
-        if (!save(stream))
-        {
-            PWD_LOG_ERROR("save stream failed!");
-            fclose(pFile);
-            return false;
-        }
-
-        if (fwrite(stream.begin(), stream.offset(), 1, pFile) != 1)
-        {
-            PWD_LOG_ERROR("write file failed!");
-            fclose(pFile);
-            return false;
-        }
-        fclose(pFile);
-
-        PWD_LOG_DEBUG("succed save pwd data %s", fname.c_str());
-        return true;
-    }
-
 }

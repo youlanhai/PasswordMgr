@@ -11,8 +11,8 @@ namespace pwd
     public:
         explicit PwdLoaderV2(bool enableEncrypt);
 
-        virtual bool load(PwdMgr &mgr, PwdStream &stream) override;
-        virtual bool save(const PwdMgr &mgr, PwdStream &stream) override;
+        virtual LoaderError load(PwdMgr &mgr, PwdStream &stream) override;
+        virtual LoaderError save(const PwdMgr &mgr, PwdStream &stream) override;
     };
 }
 

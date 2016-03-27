@@ -15,12 +15,12 @@ namespace pwd
 
     }
 
-    bool PwdLoader::load(PwdMgr &mgr, PwdStream &stream)
+    LoaderError PwdLoader::load(PwdMgr &mgr, PwdStream &stream)
     {
         stream.skip(16); //reserve 16 bytes
         if (stream.empty())
         {
-            return false;
+            return LoaderError::InvalidData;
         }
 
         pwdid idCounter;
@@ -33,16 +33,17 @@ namespace pwd
         Pwd data;
         for (uint32_t i = 0; i < len; ++i)
         {
-            if(!loadPwd(data, stream))
+            LoaderError ret = loadPwd(data, stream);
+            if(ret != LoaderError::NoError)
             {
-                return false;
+                return ret;
             }
             mgr.insert(data);
         }
-        return true;
+        return LoaderError::NoError;
     }
 
-    bool PwdLoader::save(const PwdMgr &mgr, PwdStream &stream)
+    LoaderError PwdLoader::save(const PwdMgr &mgr, PwdStream &stream)
     {
         //reserve 16 bytes
         for (size_t i = 0; i < 16; ++i)
@@ -55,11 +56,12 @@ namespace pwd
 
         for (const auto &pair : mgr)
         {
-            if(!savePwd(pair.second, stream))
+            LoaderError ret = savePwd(pair.second, stream);
+            if(ret != LoaderError::NoError)
             {
-                return false;
+                return ret;
             }
         }
-        return true;
+        return LoaderError::NoError;
     }
 }

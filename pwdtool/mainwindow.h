@@ -48,6 +48,8 @@ private slots:
 
 private:
     virtual void closeEvent(QCloseEvent * event) override;
+
+    void doSave(const QString &path);
     void viewPwdInfo(const pwd::Pwd &info);
     bool savePwdInfo();
     QTreeWidgetItem* createTreeItem(const pwd::Pwd &info);

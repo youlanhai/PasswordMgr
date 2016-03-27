@@ -9,8 +9,8 @@ namespace pwd
     class PwdLoaderV1 : public PwdLoader
     {
     public:
-        virtual bool loadPwd(Pwd &info, PwdStream &stream) override;
-        virtual bool savePwd(const Pwd &info, PwdStream &stream) override;
+        virtual LoaderError loadPwd(Pwd &info, PwdStream &stream) override;
+        virtual LoaderError savePwd(const Pwd &info, PwdStream &stream) override;
     };
 }
 #endif //PWD_LOADER_V1_H

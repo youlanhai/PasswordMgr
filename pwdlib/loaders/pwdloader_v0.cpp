@@ -3,6 +3,8 @@
 #include "../Pwd.h"
 #include "../PwdStream.h"
 
+#define PWD_RETURN_FAILED(EXP) PWD_RETURN(EXP, LoaderError::InvalidData)
+
 namespace pwd
 {
     bool read_utf16(utf16 &output, PwdStream &stream)
@@ -21,25 +23,25 @@ namespace pwd
         return true;
     }
 
-    bool PwdLoaderV0::loadPwd(Pwd &info, PwdStream &stream)
+    LoaderError PwdLoaderV0::loadPwd(Pwd &info, PwdStream &stream)
     {
-        PWD_RETURN_FALSE(stream.loadStruct<uint32_t>(info.id_));
+        PWD_RETURN_FAILED(stream.loadStruct<uint32_t>(info.id_));
 
         utf16 keyword, name, pwd, desc;
-        PWD_RETURN_FALSE(read_utf16(keyword, stream));
-        PWD_RETURN_FALSE(read_utf16(name, stream));
-        PWD_RETURN_FALSE(read_utf16(pwd, stream));
-        PWD_RETURN_FALSE(read_utf16(desc, stream));
+        PWD_RETURN_FAILED(read_utf16(keyword, stream));
+        PWD_RETURN_FAILED(read_utf16(name, stream));
+        PWD_RETURN_FAILED(read_utf16(pwd, stream));
+        PWD_RETURN_FAILED(read_utf16(desc, stream));
 
-        PWD_RETURN_FALSE(utf16_to_utf8(info.keyword_, keyword));
-        PWD_RETURN_FALSE(utf16_to_utf8(info.name_, name));
-        PWD_RETURN_FALSE(utf16_to_utf8(info.pwd_, pwd));
-        PWD_RETURN_FALSE(utf16_to_utf8(info.desc_, desc));
-        return true;
+        PWD_RETURN_FAILED(utf16_to_utf8(info.keyword_, keyword));
+        PWD_RETURN_FAILED(utf16_to_utf8(info.name_, name));
+        PWD_RETURN_FAILED(utf16_to_utf8(info.pwd_, pwd));
+        PWD_RETURN_FAILED(utf16_to_utf8(info.desc_, desc));
+        return LoaderError::NoError;
     }
 
-    bool PwdLoaderV0::savePwd(const Pwd & /*info*/, PwdStream & /*stream*/)
+    LoaderError PwdLoaderV0::savePwd(const Pwd & /*info*/, PwdStream & /*stream*/)
     {
-        return false;
+        return LoaderError::UnsupportedVersion;
     }
 }

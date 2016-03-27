@@ -11,9 +11,8 @@ public:
     explicit Document(QWidget *widget, QObject *parent = 0);
     ~Document();
 
-    bool load(const QString &path);
-    bool save();
-    bool saveAs(const QString &path);
+    pwd::LoaderError load(const QString &path);
+    pwd::LoaderError save(const QString &path);
 
     pwd::PwdMgr* getPwdMgr(){ return pwdmgr_; }
     const QString& getDataPath() const { return dataPath_; }
