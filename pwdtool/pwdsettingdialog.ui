@@ -28,7 +28,11 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="edtOldPwd"/>
+    <widget class="QLineEdit" name="edtOldPwd">
+     <property name="echoMode">
+      <enum>QLineEdit::Password</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QLabel" name="label_2">
@@ -44,7 +48,11 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="edtNewPwd"/>
+    <widget class="QLineEdit" name="edtNewPwd">
+     <property name="echoMode">
+      <enum>QLineEdit::Password</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QLabel" name="label_3">
@@ -60,7 +68,11 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="edtRepeatPwd"/>
+    <widget class="QLineEdit" name="edtRepeatPwd">
+     <property name="echoMode">
+      <enum>QLineEdit::Password</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">

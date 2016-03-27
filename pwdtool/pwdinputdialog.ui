@@ -28,7 +28,11 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="edtPassword"/>
+    <widget class="QLineEdit" name="edtPassword">
+     <property name="echoMode">
+      <enum>QLineEdit::Password</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">

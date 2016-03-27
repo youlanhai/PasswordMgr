@@ -9,6 +9,7 @@ PwdSettingDialog::PwdSettingDialog(const std::string &oldPassword, QWidget *pare
     oldPassword_(QString::fromStdString(oldPassword))
 {
     ui->setupUi(this);
+    ui->edtOldPwd->setEnabled(!oldPassword_.isEmpty());
 }
 
 PwdSettingDialog::~PwdSettingDialog()
@@ -19,7 +20,7 @@ PwdSettingDialog::~PwdSettingDialog()
 void PwdSettingDialog::on_btnOK_clicked()
 {
     QString oldPwd = ui->edtOldPwd->text();
-    if(oldPwd.isEmpty())
+    if(!oldPassword_.isEmpty() && oldPwd.isEmpty())
     {
         QMessageBox::critical(nullptr, tr("Error"), tr("Please input current password."));
         return;

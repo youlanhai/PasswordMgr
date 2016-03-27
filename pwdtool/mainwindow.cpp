@@ -75,13 +75,6 @@ MainWindow::MainWindow(QWidget *parent) :
         dir.mkpath(defaultDataPath_);
         PWD_LOG_INFO("Create path '%s'", defaultDataPath_.toUtf8().data());
     }
-
-    QString filePath = dir.absoluteFilePath(UserDataFile);
-    if(dir.exists(filePath))
-    {
-        doc_->load(filePath);
-        refreshCategoryView();
-    }
 }
 
 MainWindow::~MainWindow()
