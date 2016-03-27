@@ -18,3 +18,5 @@ namespace pwd
 	const pwdid MaxId = 0x7fffffff;
     const pwdstring EmptyStr = PWD_STR("");
 }
+
+#define PWD_RETURN_FALSE(RET) if(!(RET)) return false
