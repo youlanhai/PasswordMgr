@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>密码管理器</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../res/icon.iconset/icon_64x64.png</normaloff>../res/icon.iconset/icon_64x64.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>

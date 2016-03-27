@@ -25,5 +25,3 @@ SOURCES += \
 
 LIBS += -liconv
 
-INCLUDEPATH += $$PWD/../third_party/openssl/mac/include
-LIBS += $$PWD/../third_party/openssl/mac/lib/libcrypto.a $$PWD/../third_party/openssl/mac/lib/libssl.a
