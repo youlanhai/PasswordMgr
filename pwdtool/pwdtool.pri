@@ -14,6 +14,6 @@ SOURCES += \
     $$PWD/pwdinputdialog.cpp
 
 FORMS += \
-    $$PWD/mainwindow.ui \
-    $$PWD/pwdsettingdialog.ui \
-    $$PWD/pwdinputdialog.ui
+    $$PWD/form/mainwindow.ui \
+    $$PWD/form/pwdsettingdialog.ui \
+    $$PWD/form/pwdinputdialog.ui
