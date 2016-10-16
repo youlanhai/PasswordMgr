@@ -68,6 +68,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->edtPassword, SIGNAL(textChanged(QString)), this, SLOT(onContentModified(QString)));
     connect(ui->edtName, SIGNAL(textChanged(QString)), this, SLOT(onContentModified(QString)));
 
+    ui->actionHtmlMode->setChecked(true);
+
     defaultDataPath_ = QDir::home().absoluteFilePath(QString(DefaultDataPath));
     QDir dir(defaultDataPath_);
     if(!dir.exists())
@@ -308,11 +310,14 @@ void MainWindow::viewPwdInfo(const pwd::Pwd &info)
 {
     currentPwdID_ = info.id_;
     isSynchronized_ = true;
+
     ui->edtID->setText(QString::number(info.id_));
     ui->edtKeyword->setText(QString::fromStdString(info.keyword_));
     ui->edtName->setText(QString::fromStdString(info.name_));
-    ui->edtContent->setPlainText(QString::fromStdString(info.desc_));
     ui->edtPassword->setText(QString::fromStdString(info.pwd_));
+
+    setDetailText(QString::fromStdString(info.desc_));
+
     isSynchronized_ = false;
 }
 
@@ -456,5 +461,27 @@ void MainWindow::on_actionChangePassword_triggered()
     {
         doc_->getPwdMgr()->setEncryptKey(dialog.getNewPassword());
         doc_->setModified(true);
+    }
+}
+
+void MainWindow::on_actionHtmlMode_triggered(bool checked)
+{
+    isSynchronized_ = true;
+
+    QString text = ui->edtContent->toPlainText();
+    setDetailText(text);
+
+    isSynchronized_ = false;
+}
+
+void MainWindow::setDetailText(const QString &text)
+{
+    if(ui->actionHtmlMode->isChecked())
+    {
+        ui->edtContent->setText(text);
+    }
+    else
+    {
+        ui->edtContent->setPlainText(text);
     }
 }

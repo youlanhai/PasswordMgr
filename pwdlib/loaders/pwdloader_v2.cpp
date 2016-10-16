@@ -60,9 +60,9 @@ namespace pwd
 
         uint32_t len = ss.loadStruct<uint32_t>();
 
-        Pwd data;
         for (uint32_t i = 0; i < len; ++i)
         {
+			Pwd data;
             LoaderError ret = loadPwd(data, ss);
             if(ret != LoaderError::NoError)
             {
@@ -89,15 +89,15 @@ namespace pwd
             }
         }
 
+		streambuffer buffer = ss.steam();
+		buffer.resize(ss.offset());
+
         if(enableEncrypt_)
         {
             if(mgr.getEncryptKey().empty())
             {
                 return LoaderError::EmptyPassword;
             }
-
-            streambuffer &buffer = ss.steam();
-            buffer.resize(ss.offset());
 
             if(!encryptData(buffer, mgr.getEncryptKey()))
             {
@@ -109,14 +109,14 @@ namespace pwd
         size_t headerLength = 16;
         stream.saveStruct<uint16_t>(headerLength);
         stream.saveStruct<uchar>(enableEncrypt_);
-        stream.saveStruct<uint32_t>(ss.offset());
+        stream.saveStruct<uint32_t>(buffer.size());
         for(size_t i = 2 + 1 + 4; i < headerLength; ++i)
         {
             stream.append(0);
         }
 
         // write data
-        stream.append(ss.begin(), ss.offset());
+        stream.append(buffer.data(), buffer.size());
         return LoaderError::NoError;
     }
 

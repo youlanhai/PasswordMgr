@@ -173,6 +173,7 @@
     <addaction name="actionPwdNew"/>
     <addaction name="actionPwdDelete"/>
     <addaction name="actionChangePassword"/>
+    <addaction name="actionHtmlMode"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -241,6 +242,14 @@
   <action name="actionChangePassword">
    <property name="text">
     <string>修改密码</string>
+   </property>
+  </action>
+  <action name="actionHtmlMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>html模式</string>
    </property>
   </action>
  </widget>

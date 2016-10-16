@@ -175,7 +175,7 @@ namespace pwd
         size_t alignedSize = alignSize(inoutBuffer.size(), AES_BLOCK_SIZE);
         streambuffer temp(alignedSize);
         AES_cbc_encrypt(inoutBuffer.data(), temp.data(), inoutBuffer.size(), &key, iv, AES_ENCRYPT);
-        temp.resize(inoutBuffer.size());
+        //temp.resize(inoutBuffer.size());
 
         inoutBuffer.swap(temp);
         return true;

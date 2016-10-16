@@ -48,12 +48,16 @@ private slots:
 
     void on_actionChangePassword_triggered();
 
+    void on_actionHtmlMode_triggered(bool checked);
+
 private:
     virtual void closeEvent(QCloseEvent * event) override;
 
     void doSave(const QString &path);
     void viewPwdInfo(const pwd::Pwd &info);
     bool savePwdInfo();
+    void setDetailText(const QString &text);
+
     QTreeWidgetItem* createTreeItem(const pwd::Pwd &info);
     QTreeWidgetItem* findTreeItem(pwd::pwdid id);
 
