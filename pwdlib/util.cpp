@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <cassert>
 
-#include <iconv.h>
 #include <openssl/aes.h>
 
 namespace pwd
@@ -149,39 +148,6 @@ namespace pwd
         {
             out = source;
         }
-    }
-
-    bool utf16_to_utf8(std::string &output, const utf16 &input)
-    {
-        if(input.empty())
-        {
-            output.clear();
-            return true;
-        }
-
-        char *pInput = (char*)input.c_str();
-        size_t inputLeft = input.size() * sizeof(utf16::value_type);
-
-        size_t outputLeft = input.size() * 4;
-        output.resize(outputLeft);
-        char *pOutput = (char*)output.data();
-
-        iconv_t cd = iconv_open("utf-8", "utf-16le");
-        if(cd == iconv_t(-1))
-        {
-            return false;
-        }
-
-        if(iconv(cd, &pInput, &inputLeft, &pOutput, &outputLeft) == size_t(-1))
-        {
-            output.clear();
-            iconv_close(cd);
-            return false;
-        }
-
-        output.resize(output.size() - outputLeft);
-        iconv_close(cd);
-        return true;
     }
 
     static const uchar EncryptVector[AES_BLOCK_SIZE] = {1, 2, 54, 32, 65, 235, 92, 43, 87, 4, 65, 12, 76, 34, 20, 84};

@@ -30,7 +30,9 @@ namespace pwd
         EmptyPassword,
         InvalidPassword,
         FailedEncrypt,
-        FailedDecrypt,
+        FailedDecrypyt,
+
+        Max,
     };
 
 }

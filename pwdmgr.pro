@@ -18,13 +18,18 @@ CONFIG(debug, debug|release){
 include(pwdlib/pwdlib.pri)
 include(pwdtool/pwdtool.pri)
 
-INCLUDEPATH += $$PWD/third_party/openssl/mac/include
-LIBS += $$PWD/third_party/openssl/mac/lib/libcrypto.a $$PWD/third_party/openssl/mac/lib/libssl.a
-
-mac{
+macx{
 ICON += pwdtool/res/icon.icns
-}
 
-win32{
+INCLUDEPATH += $$PWD/third_party/openssl/mac/include
+LIBS += -L$$PWD/third_party/openssl/mac/lib -lcrypto -lssl
+LIBS += -liconv
+
+}else:win32{
+
 RC_FILE += pwdtool/res/pwdtool.rc
+
+INCLUDEPATH += $$PWD/third_party/openssl/win32/include
+LIBS += -L$$PWD/third_party/openssl/win32/lib -llibeay32 -lssleay32
+
 }

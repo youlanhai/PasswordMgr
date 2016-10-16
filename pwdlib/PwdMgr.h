@@ -58,4 +58,5 @@ namespace pwd
 
     uint32_t getVersion();
 
+    const char* getErrorStr(LoaderError code);
 }

@@ -16,6 +16,24 @@ namespace pwd
         return PwdVersion;
     }
 
+    static const char* ErrorMessages[(int)LoaderError::Max] = {
+        "No Error",
+        "Failed Open File",
+        "Failed Read File",
+        "Failed Write File",
+        "Unsupported Version",
+        "Invalid Data",
+        "Empty Password",
+        "Invalid Password",
+        "Failed Encrypt",
+        "Failed Decrypyt",
+    };
+
+    const char* getErrorStr(LoaderError code)
+    {
+        return ErrorMessages[(int)code];
+    }
+
     static long flength(FILE* pFile)
     {
         assert(pFile != NULL);

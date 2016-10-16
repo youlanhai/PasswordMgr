@@ -212,7 +212,8 @@ void MainWindow::on_actionOpen_triggered()
 
         if(ret != pwd::LoaderError::NoError)
         {
-            QMessageBox::critical(NULL, tr("Error"), tr("Failed to open data %1.").arg((int)ret));
+            QString msg = QString::fromUtf8(pwd::getErrorStr(ret));
+            QMessageBox::critical(NULL, tr("Error"), tr("Failed to open data. Error:'%1'.").arg(msg));
             return;
         }
 
@@ -310,7 +311,7 @@ void MainWindow::viewPwdInfo(const pwd::Pwd &info)
     ui->edtID->setText(QString::number(info.id_));
     ui->edtKeyword->setText(QString::fromStdString(info.keyword_));
     ui->edtName->setText(QString::fromStdString(info.name_));
-    ui->edtContent->setText(QString::fromStdString(info.desc_));
+    ui->edtContent->setPlainText(QString::fromStdString(info.desc_));
     ui->edtPassword->setText(QString::fromStdString(info.pwd_));
     isSynchronized_ = false;
 }
@@ -328,7 +329,7 @@ bool MainWindow::savePwdInfo()
 
     info.name_ = ui->edtName->text().toStdString();
     info.pwd_ = ui->edtPassword->text().toStdString();
-    info.desc_ = ui->edtContent->toHtml().toStdString();
+    info.desc_ = ui->edtContent->toPlainText().toStdString();
 
     if(currentPwdID_ == 0)
     {

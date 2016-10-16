@@ -3,10 +3,28 @@
 #include "../Pwd.h"
 #include "../PwdStream.h"
 
+#include <codecvt>
+#include <locale>
+#include <string>
+
 #define PWD_RETURN_FAILED(EXP) PWD_RETURN(EXP, LoaderError::InvalidData)
 
 namespace pwd
 {
+    typedef std::u16string utf16;
+    bool utf16_to_utf8(std::string &output, const utf16 &input)
+    {
+#if _MSC_VER == 1900
+        std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t> converter;
+        const int16_t *p = reinterpret_cast<const int16_t*>(input.c_str());
+        output = converter.to_bytes(p, p + input.size());
+#else
+        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+        output = converter.to_bytes(input);
+#endif
+        return true;
+    }
+
     bool read_utf16(utf16 &output, PwdStream &stream)
     {
         uint32_t size;

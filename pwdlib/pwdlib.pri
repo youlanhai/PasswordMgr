@@ -23,5 +23,4 @@ SOURCES += \
     $$PWD/loaders/pwdloader_v2.cpp \
     $$PWD/loaders/pwdloader_addin.cpp
 
-LIBS += -liconv
 

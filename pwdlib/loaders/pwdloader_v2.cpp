@@ -3,6 +3,7 @@
 #include "../Pwd.h"
 #include "../PwdStream.h"
 #include "../PwdMgr.h"
+#include "../pwdlog.h"
 #include <cassert>
 
 namespace pwd
