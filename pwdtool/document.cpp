@@ -64,5 +64,6 @@ pwd::LoaderError Document::save(const QString &path)
         dataPath_ = path;
         setModified(false);
     }
+    refreshTitle();
     return ret;
 }

@@ -161,9 +161,17 @@
     <property name="title">
      <string>文件</string>
     </property>
+    <widget class="QMenu" name="menuRecentFiles">
+     <property name="title">
+      <string>最近打开...</string>
+     </property>
+     <addaction name="actionClearAll"/>
+    </widget>
     <addaction name="actionOpen"/>
+    <addaction name="menuRecentFiles"/>
     <addaction name="actionSave"/>
     <addaction name="actionSaveAs"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -250,6 +258,11 @@
    </property>
    <property name="text">
     <string>html模式</string>
+   </property>
+  </action>
+  <action name="actionClearAll">
+   <property name="text">
+    <string>Clear All</string>
    </property>
   </action>
  </widget>

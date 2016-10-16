@@ -50,6 +50,8 @@ private slots:
 
     void on_actionHtmlMode_triggered(bool checked);
 
+    void onActionRecentFileTriggered();
+
 private:
     virtual void closeEvent(QCloseEvent * event) override;
 
@@ -60,6 +62,9 @@ private:
 
     QTreeWidgetItem* createTreeItem(const pwd::Pwd &info);
     QTreeWidgetItem* findTreeItem(pwd::pwdid id);
+
+    bool openFile(const QString &path);
+    void recordRecentFile(const QString &path);
 
     Ui::MainWindow *ui;
     Document*       doc_;

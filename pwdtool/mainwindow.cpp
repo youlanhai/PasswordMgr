@@ -16,6 +16,10 @@
 #include <QFileInfo>
 #include <QCloseEvent>
 #include <QMenu>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+
 #include <openssl/ssl.h>
 
 const char *DefaultDataPath = ".config/pwd";
@@ -76,6 +80,37 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         dir.mkpath(defaultDataPath_);
         PWD_LOG_INFO("Create path '%s'", defaultDataPath_.toUtf8().data());
+    }
+
+    QFile file(dir.absoluteFilePath("config.json"));
+    if(file.open(QFile::ReadOnly))
+    {
+        QJsonParseError error;
+        QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
+        file.close();
+
+        QStringList files;
+        if(error.error == QJsonParseError::NoError && doc.isObject())
+        {
+            QJsonArray list = doc.object()["Recent Files"].toArray();
+            foreach(const QJsonValue &val, list)
+            {
+                if(val.isString())
+                {
+                    files.append(val.toString());
+                }
+            }
+        }
+
+        foreach(QString s, files)
+        {
+            ui->menuRecentFiles->addAction(s, this, SLOT(onActionRecentFileTriggered()));
+        }
+
+        if(!files.isEmpty())
+        {
+            openFile(files.front());
+        }
     }
 }
 
@@ -143,6 +178,7 @@ void MainWindow::on_actionSaveAs_triggered()
         return;
     }
 
+    recordRecentFile(path);
     doSave(path);
 }
 
@@ -192,35 +228,44 @@ void MainWindow::on_actionOpen_triggered()
     QString path = QFileDialog::getOpenFileName(NULL, tr("Open File"), defaultDataPath_);
     if(!path.isEmpty())
     {
-        // clear current data
-        ui->categoryView->clear();
-        viewPwdInfo(pwd::Pwd());
-        doc_->getPwdMgr()->setEncryptKey("");
-
-        QApplication::instance()->processEvents();
-
-        pwd::LoaderError ret = doc_->load(path);
-        if(ret == pwd::LoaderError::EmptyPassword)
-        {
-            PwdInputDialog dialog;
-            if(QDialog::Accepted != dialog.exec())
-            {
-                return;
-            }
-
-            doc_->getPwdMgr()->setEncryptKey(dialog.getPassword());
-            ret = doc_->load(path);
-        }
-
-        if(ret != pwd::LoaderError::NoError)
-        {
-            QString msg = QString::fromUtf8(pwd::getErrorStr(ret));
-            QMessageBox::critical(NULL, tr("Error"), tr("Failed to open data. Error:'%1'.").arg(msg));
-            return;
-        }
-
-        refreshCategoryView();
+        openFile(path);
     }
+}
+
+bool MainWindow::openFile(const QString &path)
+{
+    recordRecentFile(path);
+
+    // clear current data
+    ui->categoryView->clear();
+    viewPwdInfo(pwd::Pwd());
+    doc_->getPwdMgr()->setEncryptKey("");
+
+    QApplication::instance()->processEvents();
+
+    pwd::LoaderError ret = doc_->load(path);
+    if(ret == pwd::LoaderError::EmptyPassword)
+    {
+        PwdInputDialog dialog;
+        dialog.setDescription(tr("Path: ") + path);
+        if(QDialog::Accepted != dialog.exec())
+        {
+            return false;
+        }
+
+        doc_->getPwdMgr()->setEncryptKey(dialog.getPassword());
+        ret = doc_->load(path);
+    }
+
+    if(ret != pwd::LoaderError::NoError)
+    {
+        QString msg = QString::fromUtf8(pwd::getErrorStr(ret));
+        QMessageBox::critical(NULL, tr("Error"), tr("Failed to open data. Error:'%1'.").arg(msg));
+        return false;
+    }
+
+    refreshCategoryView();
+    return true;
 }
 
 void MainWindow::on_actionPwdNew_triggered()
@@ -483,5 +528,66 @@ void MainWindow::setDetailText(const QString &text)
     else
     {
         ui->edtContent->setPlainText(text);
+    }
+}
+
+void MainWindow::recordRecentFile(const QString &path)
+{
+    PWD_LOG_DEBUG("load recent file %s", path.toUtf8().data());
+
+    QList<QAction*> actions = ui->menuRecentFiles->actions();
+    foreach(QAction *act, actions)
+    {
+        if(act->text() == path)
+        {
+            ui->menuRecentFiles->removeAction(act);
+            actions.removeOne(act);
+            break;
+        }
+    }
+
+    QAction *action = new QAction(path);
+    connect(action, SIGNAL(triggered(bool)), this, SLOT(onActionRecentFileTriggered()));
+    ui->menuRecentFiles->insertAction(actions.size() > 1 ? actions[1] : nullptr, action);
+    actions = ui->menuRecentFiles->actions();
+
+    QJsonArray recentFiles;
+
+    int n = 0;
+    foreach(QAction *act, actions)
+    {
+        if(act != ui->actionClearAll)
+        {
+            recentFiles.push_back(act->text());
+            ++n;
+
+            if(n >= 10)
+            {
+                break;
+            }
+        }
+    }
+
+    QJsonObject config;
+    config["Recent Files"] = recentFiles;
+
+    QJsonDocument doc(config);
+
+    QDir dir(defaultDataPath_);
+    QFile file(dir.absoluteFilePath("config.json"));
+    if(file.open(QFile::WriteOnly))
+    {
+        file.write(doc.toJson());
+        file.close();
+    }
+}
+
+void MainWindow::onActionRecentFileTriggered()
+{
+    QAction *action = qobject_cast<QAction*>(sender());
+    if(action != nullptr)
+    {
+        QString path = action->text();
+        openFile(path);
     }
 }

@@ -32,3 +32,8 @@ void PwdInputDialog::on_btnCancel_clicked()
 {
     reject();
 }
+
+void PwdInputDialog::setDescription(const QString &path)
+{
+    ui->labDescription->setText(path);
+}

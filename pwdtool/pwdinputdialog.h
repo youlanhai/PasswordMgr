@@ -16,6 +16,7 @@ public:
     ~PwdInputDialog();
 
     const std::string& getPassword() const { return password_; }
+    void setDescription(const QString &path);
 
 private slots:
     void on_btnOK_clicked();
